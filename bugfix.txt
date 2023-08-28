@@ -1,0 +1,2 @@
+mxw/util/bandpass.m
+53行目license()の第二引数を'signal_toolbox'に名前を変更した

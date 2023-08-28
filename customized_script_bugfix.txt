@@ -1,0 +1,16 @@
+273行目 FaceAlphaは''で囲う必要あり、そのあとの0.7は''を外す必要あり
+182行目 (traces3,1)ではなく(traces3,2)
+163行目も同様
+24~33行目 このままだとメモリに50GB載せなければならないので修正
+全てコメントアウトし、以下へと変更
+wellID   = 1;
+myfile   = mxw.fileManager(mydata,wellID);
+sampRate = myfile.fileObj.samplingFreq;
+dataSize = myfile.fileObj.dataLenSamples;
+downSize = sampRate/10;
+traces1 = [];
+
+for time = downSize:downSize:dataSize
+    tmp_trace = double(myfile.extractRawData(time,1));
+    traces1 = cat(1,traces1,tmp_trace);
+end
