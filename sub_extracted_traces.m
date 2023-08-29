@@ -4,7 +4,8 @@ close all
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% path & filename %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 tic
 datapath = "C:\Users\tlab\OneDrive - The University of Tokyo\tlab\study\data\maxone\";  % datapath has to be adapted
-filepath = "20230809\000008";
+filepath = "20230829\000018";
+%filepath = "20230719";
 filename = "\data.raw.h5";                                   % the filename is default (unless intentionally changed)
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% assign %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -88,7 +89,7 @@ end
 %}
 
 %index = specify_roi(0,6000,0,6000,mapxy); %要は全部
-draw_voltage(filepath,figdata,stimulation_time,traces1,traces2,map.x,map.y,false,"all",[5,3]);
+draw_voltage(filepath,figdata,stimulation_time,traces1,traces2,map.x,map.y,false,"split",[20,10]);
 toc
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% plot traces %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
