@@ -89,7 +89,12 @@ end
 %}
 
 %index = specify_roi(0,6000,0,6000,mapxy); %要は全部
-draw_voltage(filepath,figdata,stimulation_time,traces1,traces2,map.x,map.y,false,"split",[20,10]);
+%TODO 少しだけ出すやつ
+%TODO 自分でindex指定したときの保存の名前
+%TODO splitの時、フォルダ名に分割数入れる
+%TODO 簡単に、適当な場所の4個とかもってくるやつ
+%TODO 自動保存OFF機能
+draw_voltage(filepath,figdata,stimulation_time,traces1,traces2,map.x,map.y,false,"split",[10,5]);
 toc
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% plot traces %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
