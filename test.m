@@ -17,4 +17,4 @@ tmp_list = ["gt" 4 7];
 
 disp(1:2:9);
 
-close all; clear; clc;
+close all; %clear; clc;

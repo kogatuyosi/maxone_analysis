@@ -4,8 +4,9 @@ close all
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% path & filename %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 tic
 datapath = "C:\Users\tlab\OneDrive - The University of Tokyo\tlab\study\data\maxone\";  % datapath has to be adapted
-filepath = "20230829\000018";
+%filepath = "20230829\000019";
 %filepath = "20230719";
+filepath = "lian1202\435\";
 filename = "\data.raw.h5";                                   % the filename is default (unless intentionally changed)
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% assign %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -20,9 +21,9 @@ sampRate = myfile.fileObj.samplingFreq;
 dataSize = myfile.fileObj.dataLenSamples;
 fps = 10;
 downSize = sampRate/fps;
-filter = true; %true(1)にするとbandpass filterがかかる
+filter = false; %true(1)にするとbandpass filterがかかる
 highcut = 2000; %ハイカットオフ周波数
-lowcut = 1;
+lowcut = 1e-8;
 figdata = [filter lowcut highcut]; %グラフ保存用
 
 if ~((exist("pre_fps","var")) && (highcut == pre_highcut) && (fps == pre_fps) && (mydata == pre_pass) && (filter==pre_filter))
@@ -44,13 +45,16 @@ if ~((exist("pre_fps","var")) && (highcut == pre_highcut) && (fps == pre_fps) &&
     myoffset = mean(traces1(1:200,:)); % first 100 samples (10 seconds) are used to re-align traces
     traces2 = traces1-myoffset;
 
+    
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% convert microvolts to milivolts %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-    traces3 = traces2/1000;
+    %traces3 = traces2/1000;
     %mean_trace = mean(traces2,2);
 else
     disp("読み込みはやってないよ")
 end
+writematrix(traces2(:,specify_roi(1800,2000,800,1000,mapxy)),"C:\Users\tlab\OneDrive - The University of Tokyo\tlab\study\data\maxone\test_matrix_lian.txt");
+
 
 pre_fps = fps;
 pre_pass = mydata;
@@ -94,7 +98,8 @@ end
 %TODO splitの時、フォルダ名に分割数入れる
 %TODO 簡単に、適当な場所の4個とかもってくるやつ
 %TODO 自動保存OFF機能
-draw_voltage(filepath,figdata,stimulation_time,traces1,traces2,map.x,map.y,false,"split",[10,5]);
+%index = specify_roi(0,2000,0,1000,mapxy); %xy両方半分
+draw_voltage(filepath,figdata,stimulation_time,traces1,traces2,map.x,map.y,false,"split",[10,6]);
 toc
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% plot traces %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
@@ -348,7 +353,7 @@ for x_count = 1:xsteps
             case "all"
                 figname = figname + "_all";
             case "split"
-                figname = figname + "_square_split";
+                figname = figname + "_square_split_x" + string(xsteps) + "y" + string(ysteps);
                 xyplace = "x" + string(x_count) + "y" + string(y_count); %splitの場合はフォルダを別に作ってその中にグラフを入れる
         end
         %figname = figname + "_square" + "_x" + string(fix(xlim(1))) + "_" + string(ceil(xlim(2))) + "_y" + string(fix(ylim(1))) + "_" + string(ceil(ylim(2)));

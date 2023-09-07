@@ -12,7 +12,7 @@ close all; clear; clc;
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% path & filename %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-datapath = 'C:\Users\tlab\Documents\勉強\竹内研\データ\maxone\20230719\';  % datapath has to be adapted
+datapath = 'C:\Users\tlab\OneDrive - The University of Tokyo\tlab\study\data\maxone\lian1202\435\';  % datapath has to be adapted
 filename = 'data.raw.h5';                                   % the filename is default (unless intentionally changed)
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% assign %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
