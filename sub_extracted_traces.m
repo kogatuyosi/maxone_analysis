@@ -4,9 +4,9 @@ close all
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% path & filename %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 tic
 datapath = "C:\Users\tlab\OneDrive - The University of Tokyo\tlab\study\data\maxone\";  % datapath has to be adapted
-%filepath = "20230829\000019";
+filepath = "20230928\000024";
 %filepath = "20230719";
-filepath = "lian1202\435\";
+%filepath = "lian1202\435\";
 filename = "\data.raw.h5";                                   % the filename is default (unless intentionally changed)
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% assign %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -21,24 +21,33 @@ sampRate = myfile.fileObj.samplingFreq;
 dataSize = myfile.fileObj.dataLenSamples;
 fps = 10;
 downSize = sampRate/fps;
-filter = false; %true(1)にするとbandpass filterがかかる
+filter = false; %true(1)にするとbandpass filterがかかる、上手く動いてないと思う、暫くはフィルターオフで固定
 highcut = 2000; %ハイカットオフ周波数
 lowcut = 1e-8;
 figdata = [filter lowcut highcut]; %グラフ保存用
 
+mapxy = [myfile.fileObj.map.x myfile.fileObj.map.y];
+
+
+
 if ~((exist("pre_fps","var")) && (highcut == pre_highcut) && (fps == pre_fps) && (mydata == pre_pass) && (filter==pre_filter))
     disp("読み込みもやってるよ")
     traces1 = [];
-
+    
+    
     for time = downSize:downSize:dataSize
         tmp_trace = double(myfile.extractRawData(time,1));
         %tmp_trace = double(myfile.extractBPFData(time,1)); %バンドパスフィルタあり
-        if filter
-            myfile.modifyBPFilter(lowcut,highcut,4);
-            tmp_trace = myfile.bandPassFilter.filter(tmp_trace);
-        end
         traces1 = cat(1,traces1,tmp_trace);
     end
+    if filter
+        myfile.modifyBPFilter(lowcut,highcut,4);
+        traces1 = myfile.bandPassFilter.filter(traces1);
+    end
+    
+
+    %全部やるとき
+    %traces1 = double(myfile.extractRawData(1,dataSize,"electrodes",specify_electrode_number(1800,2000,800,1000,myfile.processedMap.xpos,myfile.processedMap.ypos,myfile.processedMap.electrode)));
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% offset %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -53,8 +62,20 @@ if ~((exist("pre_fps","var")) && (highcut == pre_highcut) && (fps == pre_fps) &&
 else
     disp("読み込みはやってないよ")
 end
-writematrix(traces2(:,specify_roi(1800,2000,800,1000,mapxy)),"C:\Users\tlab\OneDrive - The University of Tokyo\tlab\study\data\maxone\test_matrix_lian.txt");
 
+
+%フィルタをちゃんと活かせる方式の読み込み->遅すぎて要改善
+%{
+traces1 = [];
+for elect_number = transpose(myfile.processedMap.electrode)
+    disp(elect_number);
+    tmp_trace = double(myfile.extractRawData(1,dataSize,"electrodes",elect_number));
+    tmp_trace = downsample(tmp_trace,downSize);
+    traces1 = [traces1 tmp_trace];
+end
+myoffset = mean(traces1(1:200,:)); % first 100 samples (10 seconds) are used to re-align traces
+traces2 = traces1-myoffset;
+%}
 
 pre_fps = fps;
 pre_pass = mydata;
@@ -70,7 +91,7 @@ pre_highcut = highcut;
 %%この辺でちゃんとxy座標とかから欲しいindexを見つけ出す
 
 %index = [1 15 78]; %この番号のarrayを使う
-mapxy = [myfile.fileObj.map.x myfile.fileObj.map.y];
+
 
 
 %刺激を入れた時間
@@ -92,6 +113,9 @@ for i_index = 1:5
 end
 %}
 
+%writematrix(traces2(:,specify_roi(1800,2000,800,1000,mapxy)),"C:\Users\tlab\OneDrive - The University of Tokyo\tlab\study\data\maxone\230829_16.csv");
+%writematrix(traces2,"C:\Users\tlab\OneDrive - The University of Tokyo\tlab\study\data\maxone\230829_16.csv");
+
 %index = specify_roi(0,6000,0,6000,mapxy); %要は全部
 %TODO 少しだけ出すやつ
 %TODO 自分でindex指定したときの保存の名前
@@ -99,7 +123,7 @@ end
 %TODO 簡単に、適当な場所の4個とかもってくるやつ
 %TODO 自動保存OFF機能
 %index = specify_roi(0,2000,0,1000,mapxy); %xy両方半分
-draw_voltage(filepath,figdata,stimulation_time,traces1,traces2,map.x,map.y,false,"split",[10,6]);
+draw_voltage(filepath,figdata,stimulation_time,traces1,traces2,map.x,map.y,false,"split",[5,3]); %5,3
 toc
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% plot traces %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
@@ -189,7 +213,7 @@ colormap(ax4, mcmap);
     %end
 %end
 %}
-function index_list = specify_roi(xmin,xmax,ymin,ymax,mapxy) %指定した範囲に含まれる要素のindexを返す関数
+function index_list = specify_roi(xmin,xmax,ymin,ymax,mapxy) %指定した範囲に含まれる要素のindexを返す関数(チャンネル番号)
 index_list = [];
 for i = 1:length(mapxy)
     x = mapxy(i,1);
@@ -198,6 +222,20 @@ for i = 1:length(mapxy)
         index_list = [index_list i];
     end
 end
+end
+
+function electrode_number_list = specify_electrode_number(x_min,x_max,y_min,y_max,mapx,mapy,electrode) %指定した範囲に含まれる要素の電極番号？を返す関数
+electrode_number_index = [];
+for i = 1:length(mapx)
+    x = mapx(i);
+    y = mapy(i);
+    if (x_min<=x) && (x<x_max) && (y_min<=y) && (y<y_max)
+    electrode_number_index = [electrode_number_index i]; %これはまだmyfile.processedMap.electrodeのindex,myfile.processedMap.xposで絞り込んだだけ
+    end
+end
+electrode_number_list = transpose(electrode(electrode_number_index));
+%disp(electrode_number_index);
+%disp(electrode_number_list);
 end
 
 function draw_voltage(filepath,figdata,stimulation_time,traces1,traces2,mapx,mapy,isMean,mode,split_nums,index) %figdata = [filter lowcut highcut] split = [xsplit ysplit]
@@ -282,7 +320,11 @@ for x_count = 1:xsteps
         hold on; plot(ax1, draw_traces1, 'linewidth', .1);
         ax1.Title.String = 'downsampled traces';
         ax1.XLim = [1 size(draw_traces1,1)];
-        ax1.YLim = [min(min(draw_traces1)) max(max(draw_traces1))];
+        if (min(min(draw_traces1)) == max(max(draw_traces1)))
+            ax1.YLim = [0 max(max(draw_traces1))];
+        else
+            ax1.YLim = [min(min(draw_traces1)) max(max(draw_traces1))];
+        end
         ax1.XLabel.String = 'Time [ s ]';
         ax1.XTickLabel = ax1.XTick/10;
         grid(ax1, 'on');
@@ -291,7 +333,11 @@ for x_count = 1:xsteps
         hold on; plot(ax2, draw_traces2, 'linewidth', .1);
         ax2.Title.String = 'offset compensation';
         ax2.XLim = [1 size(draw_traces2,1)];
-        ax2.YLim = [min(min(draw_traces2)) max(max(draw_traces2))];
+        if (min(min(draw_traces2)) == max(max(draw_traces2)))
+            ax2.YLim = [0 max(max(draw_traces2))];
+        else
+            ax2.YLim = [min(min(draw_traces2)) max(max(draw_traces2))];
+        end
         %ax2.YLim = [-1000 1000];
         ax2.XLabel.String = 'Time [ s ]';
         ax2.XTickLabel = ax2.XTick/10;
