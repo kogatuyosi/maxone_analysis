@@ -4,7 +4,7 @@ close all
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% path & filename %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 tic
 datapath = "C:\Users\tlab\OneDrive - The University of Tokyo\tlab\study\data\maxone\";  % datapath has to be adapted
-filepath = "20230928\000024";
+filepath = "20230928\000025";
 %filepath = "20230719";
 %filepath = "lian1202\435\";
 filename = "\data.raw.h5";                                   % the filename is default (unless intentionally changed)
@@ -53,7 +53,7 @@ if ~((exist("pre_fps","var")) && (highcut == pre_highcut) && (fps == pre_fps) &&
 
     myoffset = mean(traces1(1:200,:)); % first 100 samples (10 seconds) are used to re-align traces
     traces2 = traces1-myoffset;
-
+    
     
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% convert microvolts to milivolts %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -123,7 +123,13 @@ end
 %TODO 簡単に、適当な場所の4個とかもってくるやつ
 %TODO 自動保存OFF機能
 %index = specify_roi(0,2000,0,1000,mapxy); %xy両方半分
-draw_voltage(filepath,figdata,stimulation_time,traces1,traces2,map.x,map.y,false,"split",[5,3]); %5,3
+%draw_voltage(filepath,figdata,stimulation_time,traces1,traces2,map.x,map.y,false,"split",[5,3]); %5,3
+
+%%%%%% 反応があるところのmap作成 %%%%%%%
+traces_width = max(traces2) - min(traces2);
+active_electrode = find(traces_width > 500);
+draw_voltage(filepath,figdata,stimulation_time,traces1,traces2,map.x,map.y,false,"all",[5,3],active_electrode);
+
 toc
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% plot traces %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %{
@@ -270,10 +276,11 @@ end
 figure_handle = zeros(xsteps,ysteps);
 %TODO 抜けがある、square形状でないindexに対応していない、最大最小しか見れてない、別のmodeを作んないとかもね
 
+
 for x_count = 1:xsteps
     for y_count = 1:ysteps
 
-        %TODO indexの分割
+        %TODO indexの分割、squre状に。あとでindexとのand加えるか
         xrange = [xmin + xlength*(x_count-1), xmin + xlength*x_count];
         yrange = [ymin + ylength*(y_count-1), ymin + ylength*y_count];
         %{
@@ -283,17 +290,17 @@ for x_count = 1:xsteps
             index = specify_roi(xmin + xlength*(x_count-1), xmin + xlength*x_count, ymin + ylength*(y_count-1), ymin + ylength*y_count, [mapx mapy]);
         end
         %}
-        if x_count == xsteps
+        if x_count == xsteps %端点処理
             xrange(2) = xmax + 1;
         end
 
-        if y_count == ysteps
+        if y_count == ysteps %端点処理
             yrange(2) = ymax + 1;
         end
 
-        index = specify_roi(xrange(1), xrange(2), yrange(1), yrange(2), [mapx mapy]);
+        sub_index = intersect(specify_roi(xrange(1), xrange(2), yrange(1), yrange(2), [mapx mapy]),index); %元の指定indexとsqure範囲の積集合を取る
 
-        if isempty(index) %空の範囲は描画しない
+        if isempty(sub_index) %空の範囲は描画しない
             disp("oh my god")
             continue
         end
@@ -310,11 +317,11 @@ for x_count = 1:xsteps
         
         %%描画範囲の処理
         if isMean %平均の計算の場合
-            draw_traces1 = mean(traces1(:,index),2);
-            draw_traces2 = mean(traces2(stimulation_time:end,index),2);
+            draw_traces1 = mean(traces1(:,sub_index),2);
+            draw_traces2 = mean(traces2(stimulation_time:end,sub_index),2);
         else %普通のとき
-            draw_traces1 = traces1(:,index);
-            draw_traces2 = traces2(stimulation_time:end,index);
+            draw_traces1 = traces1(:,sub_index);
+            draw_traces2 = traces2(stimulation_time:end,sub_index);
         end
         
         hold on; plot(ax1, draw_traces1, 'linewidth', .1);
@@ -365,10 +372,12 @@ for x_count = 1:xsteps
         mcmap = hot;
         mcmap = flipud(mcmap);
         hold(ax4,'on'); plot(ax4, mapx, mapy, 'sk', 'color', 'k', 'markersize', 5);
-        hold(ax4,'on'); plot(ax4, mapx(index), mapy(index), 'sk', 'color', 'r', 'markersize', 8);
+        hold(ax4,'on'); plot(ax4, mapx(sub_index), mapy(sub_index), 'sk', 'color', 'r', 'markersize', 8);
         colormap(ax4, mcmap);
 
         figure_handle(x_count,y_count) = gcf;
+
+
     end
 end
 
