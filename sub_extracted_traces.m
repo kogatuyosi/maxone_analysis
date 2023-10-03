@@ -4,7 +4,7 @@ close all
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% path & filename %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 tic
 datapath = "C:\Users\tlab\OneDrive - The University of Tokyo\tlab\study\data\maxone\";  % datapath has to be adapted
-filepath = "20230928\000025";
+filepath = "20230928\000023";
 %filepath = "20230719";
 %filepath = "lian1202\435\";
 filename = "\data.raw.h5";                                   % the filename is default (unless intentionally changed)
@@ -19,7 +19,7 @@ wellID   = 1;
 myfile   = mxw.fileManager(mydata,wellID);
 sampRate = myfile.fileObj.samplingFreq;
 dataSize = myfile.fileObj.dataLenSamples;
-fps = 10;
+fps = 20000;
 downSize = sampRate/fps;
 filter = false; %true(1)にするとbandpass filterがかかる、上手く動いてないと思う、暫くはフィルターオフで固定
 highcut = 2000; %ハイカットオフ周波数
@@ -34,7 +34,7 @@ if ~((exist("pre_fps","var")) && (highcut == pre_highcut) && (fps == pre_fps) &&
     disp("読み込みもやってるよ")
     traces1 = [];
     
-    
+    %{
     for time = downSize:downSize:dataSize
         tmp_trace = double(myfile.extractRawData(time,1));
         %tmp_trace = double(myfile.extractBPFData(time,1)); %バンドパスフィルタあり
@@ -44,11 +44,12 @@ if ~((exist("pre_fps","var")) && (highcut == pre_highcut) && (fps == pre_fps) &&
         myfile.modifyBPFilter(lowcut,highcut,4);
         traces1 = myfile.bandPassFilter.filter(traces1);
     end
-    
+    %}
 
     %全部やるとき
     %traces1 = double(myfile.extractRawData(1,dataSize,"electrodes",specify_electrode_number(1800,2000,800,1000,myfile.processedMap.xpos,myfile.processedMap.ypos,myfile.processedMap.electrode)));
-
+    %traces1 = double(myfile.extractRawData(1,dataSize,"electrodes",channel_number_to_electrode_number(active_electrode,map.x,map.y,myfile.processedMap.xpos,myfile.processedMap.ypos,myfile.processedMap.electrode)));
+    traces1 = double(myfile.extractRawData(1,dataSize,"electrodes",channel_number_to_electrode_number([124 232 369 389 425 429 481 580],map.x,map.y,myfile.processedMap.xpos,myfile.processedMap.ypos,myfile.processedMap.electrode)));
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% offset %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     myoffset = mean(traces1(1:200,:)); % first 100 samples (10 seconds) are used to re-align traces
@@ -127,8 +128,9 @@ end
 
 %%%%%% 反応があるところのmap作成 %%%%%%%
 traces_width = max(traces2) - min(traces2);
-active_electrode = find(traces_width > 500);
-draw_voltage(filepath,figdata,stimulation_time,traces1,traces2,map.x,map.y,false,"all",[5,3],active_electrode);
+active_electrode = find(traces_width > 500); %indexとしてそのまま入れられる形式
+%draw_voltage(filepath,figdata,stimulation_time,traces1,traces2,map.x,map.y,false,"split",[5,3],active_electrode);
+writematrix(traces2,"C:\Users\tlab\OneDrive - The University of Tokyo\tlab\study\data\maxone\csv\230928_23_x5y3_activeelectrode.csv");
 
 toc
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% plot traces %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -230,6 +232,20 @@ for i = 1:length(mapxy)
 end
 end
 
+function electrode_number_list = channel_number_to_electrode_number(channel_number_list,mapx,mapy,processedmapx,processedmapy,electrode)
+electrode_number_list = [];
+for channel_number_i = 1:length(channel_number_list)
+    channel_number = channel_number_list(channel_number_i);
+    mapxy = [mapx(channel_number) mapy(channel_number)];
+    [lia, locb] = ismember(mapxy, [processedmapx processedmapy], "rows");
+    if lia
+        electrode_number_list = [electrode_number_list electrode(locb)];
+    else
+        disp("やばぴ");
+    end
+end
+end
+
 function electrode_number_list = specify_electrode_number(x_min,x_max,y_min,y_max,mapx,mapy,electrode) %指定した範囲に含まれる要素の電極番号？を返す関数
 electrode_number_index = [];
 for i = 1:length(mapx)
@@ -276,13 +292,16 @@ end
 figure_handle = zeros(xsteps,ysteps);
 %TODO 抜けがある、square形状でないindexに対応していない、最大最小しか見れてない、別のmodeを作んないとかもね
 
-
+empty_area_x = []; %TODO もうちょいこの辺綺麗に書く
+empty_area_y = []; %空のエリアのグラフにハンドルを渡さないように
 for x_count = 1:xsteps
     for y_count = 1:ysteps
 
         %TODO indexの分割、squre状に。あとでindexとのand加えるか
         xrange = [xmin + xlength*(x_count-1), xmin + xlength*x_count];
         yrange = [ymin + ylength*(y_count-1), ymin + ylength*y_count];
+        
+
         %{
         if (x_count == xsteps) || (y_count == ysteps)
             index = specify_roi(xmin + xlength*(x_count-1), xmax + 1, ymin + ylength*(y_count-1), ymax + 1, [mapx mapy]);
@@ -299,9 +318,17 @@ for x_count = 1:xsteps
         end
 
         sub_index = intersect(specify_roi(xrange(1), xrange(2), yrange(1), yrange(2), [mapx mapy]),index); %元の指定indexとsqure範囲の積集合を取る
+        if x_count == 5
+            if y_count ==3
+                disp(sub_index);
+            end
+        end
+
 
         if isempty(sub_index) %空の範囲は描画しない
-            disp("oh my god")
+            disp("oh my god");
+            empty_area_x = [empty_area_x x_count];
+            empty_area_y = [empty_area_y y_count];
             continue
         end
         %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% plot traces %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -391,6 +418,9 @@ end
 
 for x_count = 1:xsteps
     for y_count = 1:ysteps
+        if ismember(x_count,empty_area_x) && ismember(y_count,empty_area_y)
+            continue;
+        end
 
         figname = ""; %fignameにはフィルタや開始位置、allやsplitなどの情報をおく
         if figdata(1) %filterがONなら
