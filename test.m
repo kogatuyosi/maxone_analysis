@@ -18,5 +18,5 @@ tmp1 = 23.0 / 7;
 
 tmp_list = ["gt" 4 7];
 
-close all; clear; clc;
+%close all; clear; clc;
 close all

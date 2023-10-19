@@ -4,7 +4,7 @@ close all
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% path & filename %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 tic
 datapath = "C:\Users\tlab\OneDrive - The University of Tokyo\tlab\study\data\maxone\";  % datapath has to be adapted
-filepath = "20230928\000023";
+filepath = "20231017\000036";
 %filepath = "20230719";
 %filepath = "lian1202\435\";
 filename = "\data.raw.h5";                                   % the filename is default (unless intentionally changed)
@@ -49,6 +49,7 @@ if ~((exist("pre_fps","var")) && (highcut == pre_highcut) && (fps == pre_fps) &&
     %全部やるとき
     %traces1 = double(myfile.extractRawData(1,dataSize,"electrodes",specify_electrode_number(1800,2000,800,1000,myfile.processedMap.xpos,myfile.processedMap.ypos,myfile.processedMap.electrode)));
     %traces1 = double(myfile.extractRawData(1,dataSize,"electrodes",channel_number_to_electrode_number(active_electrode,map.x,map.y,myfile.processedMap.xpos,myfile.processedMap.ypos,myfile.processedMap.electrode)));
+    %traces1 = double(myfile.extractRawData(1,dataSize,"electrodes",channel_number_to_electrode_number([124 232 369 389 425 429 481 580],map.x,map.y,myfile.processedMap.xpos,myfile.processedMap.ypos,myfile.processedMap.electrode)));
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% offset %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     myoffset = mean(traces1(1:200,:)); % first 100 samples (10 seconds) are used to re-align traces
@@ -122,14 +123,15 @@ end
 %TODO splitの時、フォルダ名に分割数入れる
 %TODO 簡単に、適当な場所の4個とかもってくるやつ
 %TODO 自動保存OFF機能
+%RO
 %index = specify_roi(0,2000,0,1000,mapxy); %xy両方半分
 %draw_voltage(filepath,figdata,stimulation_time,traces1,traces2,map.x,map.y,false,"split",[5,3]); %5,3
 
 %%%%%% 反応があるところのmap作成 %%%%%%%
 traces_width = max(traces2) - min(traces2);
 active_electrode = find(traces_width > 500); %indexとしてそのまま入れられる形式
-draw_voltage(filepath,figdata,stimulation_time,traces1,traces2,map.x,map.y,false,"split",[5,3],active_electrode);
-%writematrix(traces2,"C:\Users\tlab\OneDrive - The University of Tokyo\tlab\study\data\maxone\csv\230928_23_activeelectrode.csv");
+draw_voltage(filepath,figdata,stimulation_time,traces1,traces2,map.x,map.y,false,"split",[5,3]);
+%writematrix(traces2,"C:\Users\tlab\OneDrive - The University of Tokyo\tlab\study\data\maxone\csv\230928_23_x5y3_activeelectrode.csv");
 
 toc
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% plot traces %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -299,7 +301,7 @@ for x_count = 1:xsteps
         %TODO indexの分割、squre状に。あとでindexとのand加えるか
         xrange = [xmin + xlength*(x_count-1), xmin + xlength*x_count];
         yrange = [ymin + ylength*(y_count-1), ymin + ylength*y_count];
-        
+
 
         %{
         if (x_count == xsteps) || (y_count == ysteps)
@@ -317,11 +319,6 @@ for x_count = 1:xsteps
         end
 
         sub_index = intersect(specify_roi(xrange(1), xrange(2), yrange(1), yrange(2), [mapx mapy]),index); %元の指定indexとsqure範囲の積集合を取る
-        if x_count == 5
-            if y_count ==3
-                sub_index;
-            end
-        end
 
 
         if isempty(sub_index) %空の範囲は描画しない
